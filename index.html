@@ -3,7 +3,543 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Petualangan Pilah Sampah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#8FD8F8; --sky-bottom:#EAF8FF;
+    --organik:#3FA34D; --organik-dark:#2C7A38; --organik-tint:#DFF3E3;
+    --anorganik:#FFC93C; --anorganik-dark:#E0A600; --anorganik-tint:#FFF3D2;
+    --residu:#7C8A99; --residu-dark:#5C6B79; --residu-tint:#E7EBEE;
+    --ink:#233142; --card:#FFFFFF; --coral:#FF6B6B;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;}
+  body{background:linear-gradient(180deg,var(--sky-top) 0%, var(--sky-bottom) 55%, #DFF3E3 100%);
+    display:flex;align-items:center;justify-content:center;min-height:100vh;color:var(--ink);
+    -webkit-tap-highlight-color:transparent;user-select:none;}
+  #root{width:100%;max-width:480px;height:100vh;max-height:900px;position:relative;display:flex;flex-direction:column;padding:14px;}
+  h1,h2,h3,.display{font-family:'Baloo 2',cursive;}
+
+  #topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 4px 10px;gap:8px;}
+  #homeBtn{background:rgba(255,255,255,0.85);border:none;border-radius:12px;width:36px;height:36px;font-size:17px;box-shadow:0 3px 0 rgba(0,0,0,0.08);cursor:pointer;flex-shrink:0;}
+  #homeBtn:active{transform:translateY(2px);box-shadow:none;}
+  #title{font-size:19px;font-weight:800;}
+  #stats{display:flex;gap:8px;align-items:center;}
+  .pill{background:rgba(255,255,255,0.85);border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px;box-shadow:0 3px 0 rgba(0,0,0,0.08);display:flex;align-items:center;gap:5px;}
+  #lives{display:flex;gap:3px;}
+  .heart{font-size:16px;}
+
+  #stage{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+  #mascot{font-size:46px;transition:transform .25s;}
+  #mascot.happy{animation:bounce .5s;}
+  #mascot.sad{animation:shake .4s;}
+  @keyframes bounce{0%{transform:translateY(0)}30%{transform:translateY(-14px) rotate(-6deg)}60%{transform:translateY(0) rotate(4deg)}100%{transform:translateY(0)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+  #speech{background:#fff;border-radius:16px;padding:7px 14px;font-weight:800;font-size:13px;box-shadow:0 8px 0 rgba(0,0,0,0.12);text-align:center;max-width:280px;}
+
+  #itemcard{width:172px;height:172px;background:var(--card);border-radius:28px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    box-shadow:0 10px 0 rgba(0,0,0,0.12);animation:popIn .35s cubic-bezier(.34,1.56,.64,1);padding:8px;}
+  @keyframes popIn{0%{transform:scale(0.4) rotate(-8deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+  #itemIcon{width:96px;height:96px;}
+  #itemIcon svg{width:100%;height:100%;}
+  #itemName{font-weight:800;font-size:15px;text-align:center;padding:0 6px;color:var(--ink);}
+
+  #bins{display:flex;gap:10px;padding:8px 0 4px;}
+  .bin{flex:1;border:none;border-radius:20px;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;
+    font-family:'Baloo 2',cursive;font-weight:700;color:#fff;font-size:13px;cursor:pointer;transition:transform .1s;}
+  .bin:active{transform:scale(0.93);}
+  .bin-icon{font-size:26px;}
+  .bin.organik{background:var(--organik);box-shadow:0 6px 0 var(--organik-dark);}
+  .bin.anorganik{background:var(--anorganik);box-shadow:0 6px 0 var(--anorganik-dark);color:#5a4300;}
+  .bin.residu{background:var(--residu);box-shadow:0 6px 0 var(--residu-dark);}
+  .bin.correct-flash{animation:flashGreen .5s;}
+  .bin.wrong-flash{animation:flashRed .5s;}
+  @keyframes flashGreen{0%,100%{filter:brightness(1)}50%{filter:brightness(1.5)}}
+  @keyframes flashRed{0%,100%{filter:brightness(1)}50%{filter:brightness(0.7)}}
+
+  .screen{position:absolute;inset:0;background:rgba(20,30,45,0.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10;}
+  .card-box{background:#fff;border-radius:26px;padding:22px 20px;max-width:380px;width:100%;text-align:center;box-shadow:0 14px 0 rgba(0,0,0,0.18);max-height:92vh;overflow-y:auto;}
+  .card-box h2{font-size:22px;margin:0 0 6px;}
+  .card-box p{font-size:13px;line-height:1.5;color:#4a5568;margin:0 0 12px;}
+  .legend{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;text-align:left;}
+  .legend-row{display:flex;align-items:center;gap:10px;border-radius:14px;padding:7px 10px;font-weight:800;font-size:12px;color:#fff;}
+  .legend-row.organik{background:var(--organik);}
+  .legend-row.anorganik{background:var(--anorganik);color:#5a4300;}
+  .legend-row.residu{background:var(--residu);}
+  .legend-row span.ex{font-weight:600;font-size:10px;opacity:.9;display:block;}
+
+  .btn{font-family:'Baloo 2',cursive;font-weight:800;font-size:16px;color:#fff;background:var(--coral);border:none;border-radius:16px;padding:12px 26px;box-shadow:0 6px 0 #C1443F;cursor:pointer;}
+  .btn:active{transform:translateY(3px);box-shadow:0 3px 0 #C1443F;}
+
+  #explainBox{position:absolute;left:14px;right:14px;bottom:92px;background:#fff;border-radius:18px;padding:10px 14px;box-shadow:0 8px 0 rgba(0,0,0,0.15);text-align:center;z-index:8;animation:popIn .25s;}
+  #explainBox .cat{font-family:'Baloo 2',cursive;font-weight:800;font-size:14px;margin-bottom:2px;}
+  #explainBox .reason{font-size:12px;color:#4a5568;font-weight:700;}
+  .stars{font-size:32px;margin:6px 0 10px;}
+</style>
+</head>
+<body>
+<div id="root">
+
+  <div id="topbar">
+    <button id="homeBtn" title="Kembali ke beranda">🏠</button>
+    <div>
+      <div id="title">🌱 Pilah Sampah</div>
+      <div id="playerNameTag" style="font-size:12px;font-weight:800;background:rgba(255,255,255,0.7);border-radius:999px;padding:3px 10px;margin-top:2px;display:none;"></div>
+    </div>
+    <div id="stats">
+      <div class="pill">⭐ <span id="scoreVal">0</span></div>
+      <div class="pill"><div id="lives"></div></div>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="mascot">🌍</div>
+    <div id="speech">Yuk bantu aku pilah sampah!</div>
+    <div id="itemcard">
+      <div id="itemIcon"></div>
+      <div id="itemName">-</div>
+    </div>
+  </div>
+
+  <div id="bins">
+    <button class="bin organik" data-cat="organik"><span class="bin-icon">🍃</span>Organik</button>
+    <button class="bin anorganik" data-cat="anorganik"><span class="bin-icon">♻️</span>Anorganik</button>
+    <button class="bin residu" data-cat="residu"><span class="bin-icon">🗑️</span>Residu</button>
+  </div>
+
+  <div class="screen" id="startScreen">
+    <div class="card-box">
+      <h2>🌍 Yuk Pilah Sampah</h2>
+      <p>Ketuk tempat sampah yang tepat sebelum nyawamu habis. Cocok dimainkan siapa saja, dari anak-anak sampai orang tua!</p>
+      <div class="legend">
+        <div class="legend-row organik">🍃 Hijau — Organik<span class="ex">Sisa makanan, kulit buah, daun</span></div>
+        <div class="legend-row anorganik">♻️ Kuning — Anorganik<span class="ex">Plastik, kaleng, kertas, kaca</span></div>
+        <div class="legend-row residu">🗑️ Abu-abu — Residu<span class="ex">Campuran/kotor, sulit didaur ulang</span></div>
+      </div>
+      <div style="margin-bottom:14px;text-align:left;">
+        <label for="playerName" style="font-size:12px;font-weight:800;color:#4a5568;display:block;margin-bottom:5px;">Nama Pemain</label>
+        <input id="playerName" type="text" placeholder="Tulis namamu di sini..." maxlength="30"
+          style="width:100%;padding:10px 12px;border:2px solid #eee;border-radius:12px;font-family:'Nunito';font-size:14px;font-weight:700;color:var(--ink);outline:none;">
+      </div>
+      <button class="btn" id="startBtn">Mulai Main!</button>
+      <div style="margin-top:10px;">
+        <button id="showBoardBtn" style="background:none;border:none;color:#4a5568;font-weight:800;font-size:12px;text-decoration:underline;cursor:pointer;">Lihat Papan Skor</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="overScreen" style="display:none;">
+    <div class="card-box">
+      <h2>Yeay, selesai!</h2>
+      <div class="stars" id="starsVal">⭐⭐⭐</div>
+      <p>Skor kamu: <b id="finalScore">0</b> poin<br>Terus belajar pilah sampah ya!</p>
+      <div id="submitStatus" style="font-size:11px;color:#8a97a3;font-weight:700;margin-bottom:10px;min-height:14px;"></div>
+      <button class="btn" id="retryBtn">Main Lagi</button>
+      <div style="margin-top:10px;">
+        <button id="showBoardBtn2" style="background:none;border:none;color:#4a5568;font-weight:800;font-size:12px;text-decoration:underline;cursor:pointer;">Lihat Papan Skor</button>
+      </div>
+    </div>
+  </div>
+  <div class="screen" id="boardScreen" style="display:none;">
+    <div class="card-box">
+      <h2>📋 Papan Skor</h2>
+      <p>Rekap pemain yang sudah main.</p>
+      <div id="boardList" style="text-align:left;max-height:280px;overflow-y:auto;margin-bottom:14px;"></div>
+      <button class="btn" id="closeBoardBtn">Tutup</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+
+  // =====================================================================
+  // KONFIGURASI PENDATAAN (Google Sheets via Apps Script)
+  // 1. Buat Google Sheet baru, kasih header di baris 1: Nama | Skor | Waktu
+  // 2. Extensions > Apps Script, tempel kode dari file "apps-script-backend.gs"
+  //    yang disertakan terpisah, lalu Deploy > New deployment > Web app
+  //    (Execute as: Me, Who has access: Anyone).
+  // 3. Salin URL web app hasil deploy, tempel di bawah ini.
+  // =====================================================================
+  const SCRIPT_URL = "PASTE_URL_APPS_SCRIPT_KAMU_DI_SINI";
+
+  async function submitScore(name, scoreVal){
+    if(!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_URL") !== -1) return {ok:false, reason:"not_configured"};
+    try{
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {"Content-Type":"text/plain"},
+        body: JSON.stringify({name: name, score: scoreVal})
+      });
+      return {ok:true};
+    }catch(err){
+      return {ok:false, reason: err.message};
+    }
+  }
+
+  async function fetchLeaderboard(){
+    if(!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_URL") !== -1) return null;
+    try{
+      const res = await fetch(SCRIPT_URL, {method:"GET"});
+      const data = await res.json();
+      return data;
+    }catch(err){
+      return null;
+    }
+  }
+
+
+  // ---------- Custom flat-icon illustrations (original SVG art, viewBox 0 0 100 100) ----------
+  const ICONS = {
+    pisang: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M35 70 C22 55 28 30 45 22 C48 27 44 30 42 34 C55 30 65 42 63 58 C60 74 44 80 35 70 Z" fill="#F6D24A" stroke="#7A5A00" stroke-width="3.5" stroke-linejoin="round"/>
+      <circle cx="46" cy="21" r="4" fill="#6B4A1F"/></svg>`,
+    nasi: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M22 62 C22 74 78 74 78 62 L74 70 C74 78 26 78 26 70 Z" fill="#E4C88C" stroke="#7A5A00" stroke-width="3"/>
+      <ellipse cx="50" cy="58" rx="30" ry="16" fill="#FFFDF6" stroke="#7A5A00" stroke-width="3.5"/>
+      <circle cx="40" cy="52" r="3" fill="#fff"/><circle cx="55" cy="48" r="3" fill="#fff"/><circle cx="62" cy="55" r="3" fill="#fff"/></svg>`,
+    daun: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M50 20 C70 30 75 55 55 78 C40 60 35 35 50 20 Z" fill="#C98A3E" stroke="#5C3A12" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M50 24 L53 70" stroke="#5C3A12" stroke-width="2.5" fill="none"/></svg>`,
+    tulang: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M28 40 a7 7 0 1 1 14 4 L58 56 a7 7 0 1 1 14 4 a7 7 0 1 1 -14 -4 L44 44 a7 7 0 1 1 -14 -4 a7 7 0 1 1 -2 0Z" fill="#FBF6E8" stroke="#7A5A00" stroke-width="3.5" stroke-linejoin="round"/></svg>`,
+    telur: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M30 45 C34 30 46 20 42 42 L36 46 Z" fill="#FBF6E8" stroke="#7A5A00" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M70 48 C68 32 55 22 58 44 L64 47 Z" fill="#FBF6E8" stroke="#7A5A00" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M35 60 C45 68 55 68 65 60" fill="none" stroke="#C9A" stroke-width="0"/></svg>`,
+    ampas: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M28 42 h44 l-5 26 a6 6 0 0 1 -6 5 H39 a6 6 0 0 1 -6 -5 Z" fill="#FDFDFD" stroke="#5C3A12" stroke-width="3.5" stroke-linejoin="round"/>
+      <ellipse cx="50" cy="45" rx="12" ry="5" fill="#6B4423"/><circle cx="46" cy="43" r="1.6" fill="#3d2a12"/><circle cx="53" cy="46" r="1.6" fill="#3d2a12"/></svg>`,
+    kacang: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M38 30 C25 40 25 60 38 72 C46 78 54 78 62 72 C75 60 75 40 62 30 C54 24 46 24 38 30 Z" fill="#D9B27C" stroke="#6B4423" stroke-width="3.5"/>
+      <path d="M50 30 L50 72" stroke="#6B4423" stroke-width="2.5"/></svg>`,
+    tangkai: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M50 78 C50 55 50 40 50 22" stroke="#4C8C3A" stroke-width="6" stroke-linecap="round" fill="none"/>
+      <path d="M50 35 C60 30 68 35 65 45 C58 47 52 42 50 35Z" fill="#5FA84A" stroke="#2C5A1F" stroke-width="3"/>
+      <path d="M50 50 C40 45 32 50 35 60 C42 62 48 57 50 50Z" fill="#5FA84A" stroke="#2C5A1F" stroke-width="3"/></svg>`,
+
+    botolplastik: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <rect x="40" y="18" width="20" height="10" rx="2" fill="#9AD1E8" stroke="#1F4E63" stroke-width="3"/>
+      <path d="M38 28 h24 l4 12 v34 a6 6 0 0 1 -6 6 H40 a6 6 0 0 1 -6 -6 V40 Z" fill="#BFE6F5" stroke="#1F4E63" stroke-width="3.5" stroke-linejoin="round"/></svg>`,
+    kaleng: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <path d="M32 28 h36 v46 a4 4 0 0 1 -4 4 H36 a4 4 0 0 1 -4 -4 Z" fill="#D7DEE3" stroke="#3A4750" stroke-width="3.5" stroke-linejoin="round"/>
+      <ellipse cx="50" cy="28" rx="18" ry="5" fill="#EAF0F3" stroke="#3A4750" stroke-width="3"/>
+      <rect x="34" y="46" width="32" height="14" fill="#E96A6A"/></svg>`,
+    kardus: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <rect x="24" y="34" width="52" height="38" rx="3" fill="#CB9A5B" stroke="#6B4423" stroke-width="3.5"/>
+      <path d="M24 34 L50 48 L76 34" fill="none" stroke="#6B4423" stroke-width="3"/></svg>`,
+    botolkaca: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <rect x="45" y="18" width="10" height="12" fill="#8FBF8A" stroke="#2C5A1F" stroke-width="3"/>
+      <path d="M42 30 h16 l4 10 v34 a5 5 0 0 1 -5 5 H43 a5 5 0 0 1 -5 -5 V40 Z" fill="#B7DDB2" stroke="#2C5A1F" stroke-width="3.5" stroke-linejoin="round"/></svg>`,
+    koran: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <rect x="22" y="30" width="56" height="40" rx="2" fill="#F5F0E2" stroke="#4A4438" stroke-width="3.5"/>
+      <path d="M28 40 h30 M28 47 h44 M28 54 h44 M28 61 h34" stroke="#4A4438" stroke-width="2.5"/></svg>`,
+    kalengcat: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <rect x="30" y="30" width="40" height="42" rx="3" fill="#C7CDD2" stroke="#3A4750" stroke-width="3.5"/>
+      <rect x="30" y="42" width="40" height="12" fill="#6FB3D8"/>
+      <path d="M38 30 V22 h24 v8" fill="none" stroke="#3A4750" stroke-width="3"/></svg>`,
+    botolsampo: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <rect x="44" y="16" width="12" height="10" fill="#8A6FD8"/>
+      <path d="M38 26 h24 l3 10 v32 a5 5 0 0 1 -5 5 H40 a5 5 0 0 1 -5 -5 V36 Z" fill="#C7B7F0" stroke="#4A3080" stroke-width="3.5" stroke-linejoin="round"/></svg>`,
+    toples: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <rect x="35" y="24" width="30" height="8" rx="2" fill="#9AA6AD" stroke="#3A4750" stroke-width="3"/>
+      <path d="M32 32 h36 v36 a4 4 0 0 1 -4 4 H36 a4 4 0 0 1 -4 -4 Z" fill="#E7F3F7" stroke="#3A4750" stroke-width="3.5" stroke-linejoin="round" opacity="0.9"/></svg>`,
+
+    bungkussnack: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <path d="M30 30 L70 30 L64 74 L36 74 Z" fill="#E28FC0" stroke="#6B2C55" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M30 30 l6 -8 h28 l6 8" fill="none" stroke="#6B2C55" stroke-width="3"/>
+      <path d="M38 45 h24 M38 55 h24" stroke="#fff" stroke-width="2.5"/></svg>`,
+    tisu: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <path d="M30 40 C30 30 70 30 70 40 C74 55 66 60 70 68 C60 75 40 75 30 68 C34 60 26 55 30 40 Z" fill="#FDFDFD" stroke="#6B7580" stroke-width="3.5" stroke-linejoin="round"/></svg>`,
+    styrofoam: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <rect x="26" y="42" width="48" height="26" rx="4" fill="#F4F6F7" stroke="#6B7580" stroke-width="3.5"/>
+      <path d="M26 42 q24 -14 48 0" fill="none" stroke="#6B7580" stroke-width="3.5"/></svg>`,
+    permenkaret: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <path d="M50 30 C65 30 68 50 58 58 C68 62 62 76 48 72 C34 76 30 60 40 56 C30 50 35 30 50 30Z" fill="#E28FC0" stroke="#6B2C55" stroke-width="3.5"/></svg>`,
+    cupberlapis: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <path d="M35 32 h30 l-4 40 a4 4 0 0 1 -4 4 H43 a4 4 0 0 1 -4 -4 Z" fill="#F1E3C8" stroke="#6B4423" stroke-width="3.5" stroke-linejoin="round"/>
+      <ellipse cx="50" cy="32" rx="15" ry="4" fill="#F7EFDD" stroke="#6B4423" stroke-width="3"/>
+      <path d="M40 40 h20" stroke="#6B7580" stroke-width="2" stroke-dasharray="2 2"/></svg>`,
+    kertasminyak: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <rect x="26" y="26" width="48" height="48" rx="3" fill="#FBF6E8" stroke="#6B7580" stroke-width="3.5"/>
+      <ellipse cx="42" cy="42" rx="7" ry="5" fill="#E7C875" opacity="0.8"/>
+      <ellipse cx="58" cy="56" rx="9" ry="6" fill="#E7C875" opacity="0.8"/></svg>`,
+    sedotan: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <path d="M38 24 L38 55 Q38 62 45 62 L62 62" fill="none" stroke="#5FBFD9" stroke-width="8" stroke-linecap="round"/>
+      <path d="M38 24 L38 55 Q38 62 45 62 L62 62" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="4 4"/></svg>`,
+    puntungrokok: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <rect x="40" y="30" width="12" height="40" rx="2" fill="#FBF6E8" stroke="#6B7580" stroke-width="3"/>
+      <rect x="40" y="60" width="12" height="10" fill="#D8934A"/>
+      <path d="M55 32 q6 -4 4 -10" fill="none" stroke="#9AA6AD" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+
+    jeruk: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M35 70 C22 55 28 30 45 22 C48 27 44 30 42 34 C55 30 65 42 63 58 C60 74 44 80 35 70 Z" fill="#F5934A" stroke="#7A3A00" stroke-width="3.5" stroke-linejoin="round"/>
+      <circle cx="46" cy="21" r="4" fill="#4C7A2A"/></svg>`,
+    roti: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#DFF3E3"/>
+      <path d="M26 62 C26 40 40 30 50 30 C60 30 74 40 74 62 a6 6 0 0 1 -6 6 H32 a6 6 0 0 1 -6 -6 Z" fill="#E4B172" stroke="#6B4423" stroke-width="3.5" stroke-linejoin="round"/>
+      <circle cx="42" cy="48" r="4" fill="#6BAF5A"/><circle cx="58" cy="42" r="3" fill="#6BAF5A"/><circle cx="62" cy="55" r="3.5" fill="#6BAF5A"/></svg>`,
+    tutupbotol: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <circle cx="50" cy="50" r="26" fill="#6FB3D8" stroke="#1F4E63" stroke-width="3.5"/>
+      <path d="M28 42 h44 M28 58 h44" stroke="#1F4E63" stroke-width="3"/></svg>`,
+    kertasputih: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#FFF3D2"/>
+      <rect x="26" y="24" width="48" height="52" rx="2" fill="#FDFDFB" stroke="#6B7580" stroke-width="3.5"/>
+      <path d="M34 38 h32 M34 48 h32 M34 58 h20" stroke="#9AA6AD" stroke-width="2.5"/></svg>`,
+    kabel: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <path d="M25 35 C40 35 30 55 45 55 C60 55 50 75 68 75" fill="none" stroke="#3A4750" stroke-width="6" stroke-linecap="round"/>
+      <rect x="63" y="68" width="16" height="12" rx="2" fill="#DDD" stroke="#3A4750" stroke-width="3"/></svg>`,
+    kain: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <path d="M28 30 L72 30 L68 48 L74 55 L64 60 L70 68 L58 66 L60 76 L48 68 L42 74 L40 62 L28 66 L34 54 L26 48 Z" fill="#8FB6D9" stroke="#3A4750" stroke-width="3" stroke-linejoin="round"/></svg>`,
+    kertaskado: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <rect x="28" y="30" width="44" height="42" rx="3" fill="#D9A8E0" stroke="#6B2C7A" stroke-width="3.5"/>
+      <rect x="45" y="30" width="10" height="42" fill="#F2D45C"/>
+      <rect x="28" y="46" width="44" height="10" fill="#F2D45C"/></svg>`,
+    sikatgigi: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <rect x="44" y="45" width="10" height="35" rx="4" fill="#6FB3D8" stroke="#1F4E63" stroke-width="3"/>
+      <rect x="34" y="24" width="30" height="22" rx="5" fill="#F4F6F7" stroke="#3A4750" stroke-width="3.5"/>
+      <path d="M38 30 v10 M45 28 v14 M52 28 v14 M59 30 v10" stroke="#9AA6AD" stroke-width="2.5"/></svg>`,
+    karetsandal: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E7EBEE"/>
+      <path d="M50 28 C64 28 68 45 60 55 C68 60 63 76 50 74 C37 76 32 60 40 55 C32 45 36 28 50 28Z" fill="#C58452" stroke="#5C3A12" stroke-width="3.5"/></svg>`,
+  };
+
+  function iconOf(key){ return ICONS[key] || ICONS.tisu; }
+
+  // ---------- Item data ----------
+  const BASIC = [
+    {name:"Kulit Pisang", icon:"pisang", cat:"organik", reason:"Kulit buah mudah membusuk & bisa jadi kompos."},
+    {name:"Kulit Jeruk", icon:"jeruk", cat:"organik", reason:"Kulit buah cepat membusuk & bisa jadi kompos."},
+    {name:"Sisa Nasi", icon:"nasi", cat:"organik", reason:"Sisa makanan cepat terurai secara alami."},
+    {name:"Daun Kering", icon:"daun", cat:"organik", reason:"Berasal dari tumbuhan, bisa jadi pupuk."},
+    {name:"Tulang Ayam", icon:"tulang", cat:"organik", reason:"Sisa makanan hewani, bisa terurai alami."},
+    {name:"Kulit Telur", icon:"telur", cat:"organik", reason:"Terlihat keras, tapi tetap organik & bisa jadi kompos."},
+    {name:"Botol Air Mineral", icon:"botolplastik", cat:"anorganik", reason:"Plastik bisa dicuci & didaur ulang jadi barang baru."},
+    {name:"Kaleng Minuman Soda", icon:"kaleng", cat:"anorganik", reason:"Logam bisa dilebur dan dipakai lagi."},
+    {name:"Kardus Bekas", icon:"kardus", cat:"anorganik", reason:"Kertas & kardus bisa didaur ulang."},
+    {name:"Botol Kaca", icon:"botolkaca", cat:"anorganik", reason:"Kaca bisa dilebur dan dipakai kembali."},
+    {name:"Koran Bekas", icon:"koran", cat:"anorganik", reason:"Kertas kering & bersih bisa didaur ulang."},
+    {name:"Kertas HVS Bekas", icon:"kertasputih", cat:"anorganik", reason:"Kertas bersih & kering bisa didaur ulang jadi kertas baru."},
+    {name:"Bungkus Snack/Chiki", icon:"bungkussnack", cat:"residu", reason:"Plastik berlapis alumunium sulit didaur ulang."},
+    {name:"Tisu Bekas Pakai", icon:"tisu", cat:"residu", reason:"Tisu yang sudah kotor tak bisa didaur ulang."},
+    {name:"Kotak Styrofoam Kotor", icon:"styrofoam", cat:"residu", reason:"Styrofoam kotor tak bisa diproses ulang."},
+    {name:"Permen Karet Bekas", icon:"permenkaret", cat:"residu", reason:"Permen karet tak bisa terurai atau didaur ulang."},
+    {name:"Sedotan Plastik", icon:"sedotan", cat:"residu", reason:"Ukurannya kecil & tercampur, sulit dipilah untuk daur ulang."},
+    {name:"Puntung Rokok", icon:"puntungrokok", cat:"residu", reason:"Filternya dari bahan kimia yang sulit terurai maupun didaur ulang."},
+  ];
+
+  const ADVANCED = [
+    {name:"Roti Basi", icon:"roti", cat:"organik", reason:"Roti berjamur tetap sisa makanan, bisa terurai alami."},
+    {name:"Ranting Pohon", icon:"daun", cat:"organik", reason:"Bahan alami dari tumbuhan, bisa terurai & jadi kompos."},
+    {name:"Tulang Ikan", icon:"tulang", cat:"organik", reason:"Sisa makanan hewani, tetap organik walau keras."},
+    {name:"Ampas Kopi", icon:"ampas", cat:"organik", reason:"Sering dikira residu, padahal ampas kopi bagus untuk kompos."},
+    {name:"Ampas Teh", icon:"ampas", cat:"organik", reason:"Sisa seduhan daun teh, mudah terurai & bagus untuk kompos."},
+    {name:"Kulit Kacang", icon:"kacang", cat:"organik", reason:"Cangkang alami, mudah terurai."},
+    {name:"Tangkai Sayur", icon:"tangkai", cat:"organik", reason:"Sisa tumbuhan, tetap organik meski keras."},
+    {name:"Sayur Busuk", icon:"tangkai", cat:"organik", reason:"Sisa sayur yang membusuk tetap organik, bisa jadi kompos."},
+    {name:"Kulit Mangga", icon:"jeruk", cat:"organik", reason:"Kulit buah mudah membusuk & bisa jadi kompos."},
+    {name:"Batang Jagung", icon:"tangkai", cat:"organik", reason:"Sisa tumbuhan yang bisa terurai secara alami."},
+    {name:"Galon Air Bekas", icon:"botolplastik", cat:"anorganik", reason:"Plastik keras bisa dicuci & didaur ulang."},
+    {name:"Kaleng Makanan", icon:"kaleng", cat:"anorganik", reason:"Kaleng logam bisa dicuci & dilebur ulang."},
+    {name:"Kotak Sepatu", icon:"kardus", cat:"anorganik", reason:"Kertas karton kering bisa didaur ulang."},
+    {name:"Toples Kaca", icon:"toples", cat:"anorganik", reason:"Kaca bisa dilebur dan dipakai ulang."},
+    {name:"Majalah Bekas", icon:"koran", cat:"anorganik", reason:"Kertas majalah bisa didaur ulang jadi kertas baru."},
+    {name:"Kaleng Cat Bersih", icon:"kalengcat", cat:"anorganik", reason:"Logam bersih & kosong bisa didaur ulang."},
+    {name:"Botol Sampo", icon:"botolsampo", cat:"anorganik", reason:"Plastik bekas sampo bisa dicuci & didaur ulang."},
+    {name:"Botol Deterjen", icon:"botolsampo", cat:"anorganik", reason:"Plastik keras bisa dicuci & didaur ulang."},
+    {name:"Tutup Botol Plastik", icon:"tutupbotol", cat:"anorganik", reason:"Plastik keras kecil ini tetap bisa didaur ulang bila dikumpulkan."},
+    {name:"Kaleng Biskuit", icon:"kaleng", cat:"anorganik", reason:"Kaleng logam bisa dicuci & didaur ulang."},
+    {name:"Bungkus Mie Instan", icon:"bungkussnack", cat:"residu", reason:"Plastik berlapis metalik di dalamnya sulit dipisah & didaur ulang."},
+    {name:"Tisu Basah Bekas", icon:"tisu", cat:"residu", reason:"Mengandung serat sintetis & sudah kotor, tak bisa didaur ulang."},
+    {name:"Gelas Kopi Sekali Pakai", icon:"cupberlapis", cat:"residu", reason:"Terlihat seperti kertas, tapi ada lapisan plastik di dalamnya sehingga sulit didaur ulang."},
+    {name:"Kertas Nasi Berminyak", icon:"kertasminyak", cat:"residu", reason:"Kertas yang terkena minyak/makanan sudah terkontaminasi, tidak bisa didaur ulang."},
+    {name:"Kabel Charger Rusak", icon:"kabel", cat:"residu", reason:"Campuran logam & plastik jadi satu, sulit dipisah tanpa alat khusus."},
+    {name:"Kain Sobek/Lap Kotor", icon:"kain", cat:"residu", reason:"Kain kotor atau campuran serat sulit didaur ulang biasa."},
+    {name:"Kertas Kado Mengkilap", icon:"kertaskado", cat:"residu", reason:"Lapisan foil mengkilapnya membuat kertas ini sulit didaur ulang."},
+    {name:"Karet Gelang Putus", icon:"permenkaret", cat:"residu", reason:"Karet sintetis umumnya tidak bisa didaur ulang biasa."},
+    {name:"Sikat Gigi Bekas", icon:"sikatgigi", cat:"residu", reason:"Campuran plastik & bulu nilon sulit dipisah untuk daur ulang."},
+    {name:"Karet Sandal Putus", icon:"karetsandal", cat:"residu", reason:"Bahan karet/busa sintetis sulit terurai maupun didaur ulang biasa."},
+  ];
+
+  const CAT_LABEL = {organik:"Organik 🍃", anorganik:"Anorganik ♻️", residu:"Residu 🗑️"};
+  const MASCOT_MOODS = {idle:"🌍", happy:"😄", sad:"😟"};
+  const SPEECH_START = ["Yuk bantu aku pilah sampah!","Sampah apa ini, ya?","Ketuk tempat yang benar!","Coba pikir dulu ya!"];
+  const SPEECH_CORRECT = ["Betul sekali!","Keren, tepat!","Hebat, kamu jago!","Yes! Benar!"];
+  const SPEECH_WRONG = ["Yah, kurang tepat.","Coba lagi ya!","Hampir, tapi belum tepat."];
+
+  const pool = BASIC.concat(ADVANCED);
+  let score = 0, lives = 3, current = null, busy = false, streak = 0;
+
+  const el = id => document.getElementById(id);
+  const scoreVal = el('scoreVal'), livesEl = el('lives'), mascot = el('mascot'),
+        speech = el('speech'), itemIcon = el('itemIcon'), itemName = el('itemName'),
+        startScreen = el('startScreen'), overScreen = el('overScreen'), finalScore = el('finalScore'),
+        starsVal = el('starsVal');
+
+  function renderLives(){
+    livesEl.innerHTML = "";
+    for(let i=0;i<3;i++){
+      const s = document.createElement('span');
+      s.className='heart';
+      s.textContent = i < lives ? "❤️" : "🤍";
+      livesEl.appendChild(s);
+    }
+  }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  let audioCtx;
+  function beep(freqs, dur){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      let t = audioCtx.currentTime;
+      freqs.forEach((f)=>{
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.type='sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0.001,t);
+        g.gain.exponentialRampToValueAtTime(0.25, t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t); o.stop(t+dur+0.02);
+        t += dur*0.8;
+      });
+    }catch(e){}
+  }
+  function soundCorrect(){ beep([523.25,659.25,784.0], 0.14); }
+  function soundWrong(){ beep([300,220], 0.18); }
+
+  function newItem(){
+    current = pick(pool);
+    itemIcon.innerHTML = iconOf(current.icon);
+    itemName.textContent = current.name;
+    const card = el('itemcard');
+    card.style.animation='none'; void card.offsetWidth; card.style.animation='popIn .35s cubic-bezier(.34,1.56,.64,1)';
+    mascot.className=''; mascot.textContent = MASCOT_MOODS.idle;
+    speech.textContent = pick(SPEECH_START);
+  }
+
+  function showExplain(){
+    const box = document.createElement('div');
+    box.id='explainBox';
+    box.innerHTML = `<div class="cat">${current.name} = ${CAT_LABEL[current.cat]}</div><div class="reason">${current.reason}</div>`;
+    document.getElementById('root').appendChild(box);
+    setTimeout(()=>{ box.remove(); }, 1500);
+  }
+
+  function handleAnswer(chosenCat, btn){
+    if(busy || !current) return;
+    busy = true;
+    const correct = chosenCat === current.cat;
+    if(correct){
+      score += 10 + Math.min(streak,5)*2; streak++;
+      scoreVal.textContent = score;
+      btn.classList.add('correct-flash');
+      mascot.className='happy'; mascot.textContent = MASCOT_MOODS.happy;
+      speech.textContent = pick(SPEECH_CORRECT);
+      soundCorrect();
+    } else {
+      streak = 0; lives--; renderLives();
+      btn.classList.add('wrong-flash');
+      mascot.className='sad'; mascot.textContent = MASCOT_MOODS.sad;
+      speech.textContent = pick(SPEECH_WRONG);
+      soundWrong();
+    }
+    showExplain();
+    setTimeout(()=>{
+      btn.classList.remove('correct-flash','wrong-flash');
+      busy = false;
+      if(lives <= 0){ endGame(); } else { newItem(); }
+    }, 1100);
+  }
+
+  function endGame(){
+    finalScore.textContent = score;
+    let stars = "⭐";
+    if(score >= 60) stars = "⭐⭐";
+    if(score >= 120) stars = "⭐⭐⭐";
+    starsVal.textContent = stars;
+    overScreen.style.display='flex';
+    const statusEl = el('submitStatus');
+    const configured = SCRIPT_URL && SCRIPT_URL.indexOf("PASTE_URL") === -1;
+    if(configured){
+      statusEl.textContent = "Menyimpan skor...";
+      submitScore(playerName || "Anonim", score).then(res=>{
+        statusEl.textContent = res.ok ? "Skor tersimpan ✓" : "Gagal menyimpan skor (cek koneksi)";
+      });
+    } else {
+      statusEl.textContent = "";
+    }
+  }
+
+  let playerName = "";
+  const playerNameTag = el('playerNameTag');
+
+  function startGame(){
+    playerName = (el('playerName').value || "").trim();
+    score = 0; lives = 3; streak = 0;
+    scoreVal.textContent = 0; renderLives();
+    startScreen.style.display='none'; overScreen.style.display='none';
+    if(playerName){
+      playerNameTag.textContent = "👤 " + playerName;
+      playerNameTag.style.display = 'inline-block';
+    } else {
+      playerNameTag.style.display = 'none';
+    }
+    newItem();
+  }
+
+  function goHome(){
+    busy = true; current = null;
+    overScreen.style.display='none';
+    startScreen.style.display='flex';
+    playerNameTag.style.display = 'none';
+  }
+
+  el('homeBtn').addEventListener('click', goHome);
+
+  const boardScreen = el('boardScreen'), boardList = el('boardList');
+
+  async function openBoard(){
+    boardScreen.style.display='flex';
+    boardList.innerHTML = '<div style="font-size:13px;color:#8a97a3;font-weight:700;">Memuat data...</div>';
+    const data = await fetchLeaderboard();
+    if(!data){
+      boardList.innerHTML = '<div style="font-size:13px;color:#8a97a3;font-weight:700;">Papan skor belum diatur, atau gagal memuat data.</div>';
+      return;
+    }
+    if(data.length === 0){
+      boardList.innerHTML = '<div style="font-size:13px;color:#8a97a3;font-weight:700;">Belum ada data pemain.</div>';
+      return;
+    }
+    const sorted = data.slice().sort((a,b)=> (b.score||0) - (a.score||0)).slice(0,30);
+    boardList.innerHTML = sorted.map((r,i)=>`
+      <div style="display:flex;justify-content:space-between;padding:7px 4px;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:700;">
+        <span>${i+1}. ${(r.name||'Anonim')}</span><span>${r.score||0} ⭐</span>
+      </div>`).join('');
+  }
+
+  el('showBoardBtn').addEventListener('click', openBoard);
+  el('showBoardBtn2').addEventListener('click', openBoard);
+  el('closeBoardBtn').addEventListener('click', ()=>{ boardScreen.style.display='none'; });
+
+  document.querySelectorAll('.bin').forEach(btn=>{
+    btn.addEventListener('click', ()=> handleAnswer(btn.dataset.cat, btn));
+  });
+  el('startBtn').addEventListener('click', startGame);
+  el('retryBtn').addEventListener('click', startGame);
+
+  renderLives();
+})();
+</script>
+</body>
+</html>
+>Petualangan Pilah Sampah</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
