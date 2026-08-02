@@ -125,9 +125,6 @@
           style="width:100%;padding:10px 12px;border:2px solid #eee;border-radius:12px;font-family:'Nunito';font-size:14px;font-weight:700;color:var(--ink);outline:none;">
       </div>
       <button class="btn" id="startBtn">Mulai Main!</button>
-      <div style="margin-top:10px;">
-        <button id="showBoardBtn" style="background:none;border:none;color:#4a5568;font-weight:800;font-size:12px;text-decoration:underline;cursor:pointer;">Lihat Papan Skor</button>
-      </div>
     </div>
   </div>
 
@@ -136,19 +133,10 @@
       <h2>Yeay, selesai!</h2>
       <div class="stars" id="starsVal">⭐⭐⭐</div>
       <p>Skor kamu: <b id="finalScore">0</b> poin<br>Terus belajar pilah sampah ya!</p>
-      <div id="submitStatus" style="font-size:11px;color:#8a97a3;font-weight:700;margin-bottom:10px;min-height:14px;"></div>
-      <button class="btn" id="retryBtn">Main Lagi</button>
-      <div style="margin-top:10px;">
-        <button id="showBoardBtn2" style="background:none;border:none;color:#4a5568;font-weight:800;font-size:12px;text-decoration:underline;cursor:pointer;">Lihat Papan Skor</button>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn" id="retryBtn">Main Lagi</button>
+        <button class="btn" id="homeFromOverBtn" style="background:var(--residu);box-shadow:0 6px 0 var(--residu-dark);">Kembali ke Beranda</button>
       </div>
-    </div>
-  </div>
-  <div class="screen" id="boardScreen" style="display:none;">
-    <div class="card-box">
-      <h2>📋 Papan Skor</h2>
-      <p>Rekap pemain yang sudah main.</p>
-      <div id="boardList" style="text-align:left;max-height:280px;overflow-y:auto;margin-bottom:14px;"></div>
-      <button class="btn" id="closeBoardBtn">Tutup</button>
     </div>
   </div>
 
@@ -156,42 +144,6 @@
 
 <script>
 (function(){
-
-  // =====================================================================
-  // KONFIGURASI PENDATAAN (Google Sheets via Apps Script)
-  // 1. Buat Google Sheet baru, kasih header di baris 1: Nama | Skor | Waktu
-  // 2. Extensions > Apps Script, tempel kode dari file "apps-script-backend.gs"
-  //    yang disertakan terpisah, lalu Deploy > New deployment > Web app
-  //    (Execute as: Me, Who has access: Anyone).
-  // 3. Salin URL web app hasil deploy, tempel di bawah ini.
-  // =====================================================================
-  const SCRIPT_URL = "PASTE_URL_APPS_SCRIPT_KAMU_DI_SINI";
-
-  async function submitScore(name, scoreVal){
-    if(!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_URL") !== -1) return {ok:false, reason:"not_configured"};
-    try{
-      await fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: {"Content-Type":"text/plain"},
-        body: JSON.stringify({name: name, score: scoreVal})
-      });
-      return {ok:true};
-    }catch(err){
-      return {ok:false, reason: err.message};
-    }
-  }
-
-  async function fetchLeaderboard(){
-    if(!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_URL") !== -1) return null;
-    try{
-      const res = await fetch(SCRIPT_URL, {method:"GET"});
-      const data = await res.json();
-      return data;
-    }catch(err){
-      return null;
-    }
-  }
 
 
   // ---------- Custom flat-icon illustrations (original SVG art, viewBox 0 0 100 100) ----------
@@ -460,16 +412,6 @@
     if(score >= 120) stars = "⭐⭐⭐";
     starsVal.textContent = stars;
     overScreen.style.display='flex';
-    const statusEl = el('submitStatus');
-    const configured = SCRIPT_URL && SCRIPT_URL.indexOf("PASTE_URL") === -1;
-    if(configured){
-      statusEl.textContent = "Menyimpan skor...";
-      submitScore(playerName || "Anonim", score).then(res=>{
-        statusEl.textContent = res.ok ? "Skor tersimpan ✓" : "Gagal menyimpan skor (cek koneksi)";
-      });
-    } else {
-      statusEl.textContent = "";
-    }
   }
 
   let playerName = "";
@@ -497,31 +439,7 @@
   }
 
   el('homeBtn').addEventListener('click', goHome);
-
-  const boardScreen = el('boardScreen'), boardList = el('boardList');
-
-  async function openBoard(){
-    boardScreen.style.display='flex';
-    boardList.innerHTML = '<div style="font-size:13px;color:#8a97a3;font-weight:700;">Memuat data...</div>';
-    const data = await fetchLeaderboard();
-    if(!data){
-      boardList.innerHTML = '<div style="font-size:13px;color:#8a97a3;font-weight:700;">Papan skor belum diatur, atau gagal memuat data.</div>';
-      return;
-    }
-    if(data.length === 0){
-      boardList.innerHTML = '<div style="font-size:13px;color:#8a97a3;font-weight:700;">Belum ada data pemain.</div>';
-      return;
-    }
-    const sorted = data.slice().sort((a,b)=> (b.score||0) - (a.score||0)).slice(0,30);
-    boardList.innerHTML = sorted.map((r,i)=>`
-      <div style="display:flex;justify-content:space-between;padding:7px 4px;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:700;">
-        <span>${i+1}. ${(r.name||'Anonim')}</span><span>${r.score||0} ⭐</span>
-      </div>`).join('');
-  }
-
-  el('showBoardBtn').addEventListener('click', openBoard);
-  el('showBoardBtn2').addEventListener('click', openBoard);
-  el('closeBoardBtn').addEventListener('click', ()=>{ boardScreen.style.display='none'; });
+  el('homeFromOverBtn').addEventListener('click', goHome);
 
   document.querySelectorAll('.bin').forEach(btn=>{
     btn.addEventListener('click', ()=> handleAnswer(btn.dataset.cat, btn));
